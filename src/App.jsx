@@ -6,19 +6,20 @@ import {
 } from "./data";
 
 // ── Thème (identique au DMS pour la cohérence visuelle) ──────────────────────
+// Thème clair « verts pastel » : fond vert très pâle, cartes blanches, accent vert sauge.
 const C = {
-  bg:"#0f172a", card:"#1e293b", side:"#0d1f3c", hdr:"#162040",
-  acc:"#0d9488", acc2:"#14b8a6", bdr:"#2d4a7a", txt:"#e2e8f0", sub:"#94a3b8", mut:"#64748b",
-  field:"#0a1628",
+  bg:"#f0f7f1", card:"#ffffff", side:"#e3efe5", hdr:"#e8f2ea",
+  acc:"#5d9e78", acc2:"#3f8059", bdr:"#cfe3d4", txt:"#1f3d2b", sub:"#4a6552", mut:"#6f8a79",
+  field:"#f3f9f4",
 };
 const STATUS = {
-  brouillon: { label:"Brouillon", col:"#f59e0b" },
-  finalise:  { label:"Finalisé",  col:"#34d399" },
+  brouillon: { label:"Brouillon", col:"#c2871a" },
+  finalise:  { label:"Finalisé",  col:"#2f9e6b" },
 };
 const ROLE_STYLE = {
-  admin:      { bg:"#450a0a", cl:"#fca5a5" },
-  enseignant: { bg:"#172554", cl:"#93c5fd" },
-  eleve:      { bg:"#052e16", cl:"#86efac" },
+  admin:      { bg:"#fde8e6", cl:"#b14138" },
+  enseignant: { bg:"#e4eefb", cl:"#2f6fb0" },
+  eleve:      { bg:"#e3f3ea", cl:"#3f8059" },
 };
 const ROLE_LABEL = { admin:"Administrateur", enseignant:"Enseignant", eleve:"Étudiant Technicien" };
 const roleLabel = (r) => ROLE_LABEL[r] || r;
@@ -47,9 +48,9 @@ const BODY_ZONES  = [
 ];
 // Couleur d'un état (vert = bon … rouge = à remplacer).
 const stateColor = (s) =>
-  /remplacer|fissure|très sale|sale|manquant/i.test(s) ? "#f87171"
-  : /usé|à surveiller|impact|correct|enfoncement|choc/i.test(s) ? "#fbbf24"
-  : "#34d399";
+  /remplacer|fissure|très sale|sale|manquant/i.test(s) ? "#d2564f"
+  : /usé|à surveiller|impact|correct|enfoncement|choc/i.test(s) ? "#c2871a"
+  : "#2f9e6b";
 
 // ── Mode démo (?demo dans l'URL) ─────────────────────────────────────────────
 // Permet de présenter l'app SANS connexion ni backend (auth + données factices).
@@ -271,7 +272,7 @@ function SigPad({ onSave, init }) {
     return [(s.clientX-r.left)*sx, (s.clientY-r.top)*sy];
   };
   const dn=(e)=>{e.preventDefault();dr.current=true;const[x,y]=getPos(e);const ctx=cv.current.getContext("2d");ctx.beginPath();ctx.moveTo(x,y);};
-  const mv=(e)=>{if(!dr.current)return;e.preventDefault();const[x,y]=getPos(e);const ctx=cv.current.getContext("2d");ctx.strokeStyle="#0f766e";ctx.lineWidth=2;ctx.lineCap="round";ctx.lineTo(x,y);ctx.stroke();sh(true);};
+  const mv=(e)=>{if(!dr.current)return;e.preventDefault();const[x,y]=getPos(e);const ctx=cv.current.getContext("2d");ctx.strokeStyle="#3f8059";ctx.lineWidth=2;ctx.lineCap="round";ctx.lineTo(x,y);ctx.stroke();sh(true);};
   const up=(e)=>{e.preventDefault();dr.current=false;};
   return (
     <div>
@@ -333,7 +334,7 @@ function PhotoCapture({ photos, setPhotos, notify }) {
                     <option value="Intérieur">Intérieur</option>
                   </select>
                   <button type="button" onClick={() => setPhotos((p) => p.filter((x) => x.id!==ph.id))}
-                    style={{ background:"none", border:"1px solid "+C.bdr, borderRadius:5, color:"#f87171", cursor:"pointer", fontSize:11, padding:"3px 0" }}>Supprimer</button>
+                    style={{ background:"none", border:"1px solid "+C.bdr, borderRadius:5, color:"#d2564f", cursor:"pointer", fontSize:11, padding:"3px 0" }}>Supprimer</button>
                 </div>
               </div>
             ))}
@@ -364,17 +365,17 @@ function inspectionHTML(insp, photos) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(insp.inspectionNum)}</title>
 <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;background:#fff;}
 .page{padding:12mm 14mm;max-width:210mm;margin:0 auto;}
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0d9488;padding-bottom:10px;margin-bottom:14px;}
-.bn{font-size:20px;font-weight:bold;color:#0d9488;}.bs{font-size:10px;color:#555;margin-top:2px;}
-.on{font-size:20px;font-weight:bold;color:#0d9488;text-align:right;}.om{font-size:10px;color:#555;text-align:right;margin-top:2px;}
-.sec{margin-bottom:10px;}.sh{background:#0d9488;color:#fff;padding:4px 10px;font-size:11px;font-weight:bold;margin-bottom:6px;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #3f8059;padding-bottom:10px;margin-bottom:14px;}
+.bn{font-size:20px;font-weight:bold;color:#3f8059;}.bs{font-size:10px;color:#555;margin-top:2px;}
+.on{font-size:20px;font-weight:bold;color:#3f8059;text-align:right;}.om{font-size:10px;color:#555;text-align:right;margin-top:2px;}
+.sec{margin-bottom:10px;}.sh{background:#3f8059;color:#fff;padding:4px 10px;font-size:11px;font-weight:bold;margin-bottom:6px;}
 .grid{display:grid;gap:6px 10px;}.g2{grid-template-columns:1fr 1fr;}.g3{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(4,1fr);}.g5{grid-template-columns:repeat(5,1fr);}
 .lb{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
 .vl{font-size:12px;font-weight:bold;border-bottom:1px solid #ccc;padding-bottom:2px;min-height:17px;}
 .tb{border:1px solid #ddd;padding:6px 8px;min-height:30px;font-size:11px;line-height:1.5;white-space:pre-wrap;}
 .dt{width:100%;border-collapse:collapse;font-size:11px;}.dt th{background:#f1f5f9;text-align:left;padding:4px 6px;border:1px solid #ddd;}.dt td{padding:4px 6px;border:1px solid #ddd;}
 .phg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}.ph{border:1px solid #ddd;border-radius:4px;overflow:hidden;}.ph img{width:100%;height:90px;object-fit:cover;display:block;}.pc{font-size:9px;color:#555;padding:2px 4px;text-align:center;}
-.sr{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px;padding-top:12px;border-top:2px solid #0d9488;}
+.sr{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px;padding-top:12px;border-top:2px solid #3f8059;}
 .sl{font-size:10px;color:#333;font-weight:bold;margin-bottom:5px;}.sb{border:1px solid #999;height:82px;display:flex;align-items:center;justify-content:center;background:#fafafa;overflow:hidden;}
 .sn{font-size:9px;color:#888;text-align:center;margin-top:3px;}
 .foot{margin-top:12px;padding-top:8px;border-top:1px solid #ddd;font-size:9px;color:#aaa;text-align:center;}
@@ -420,7 +421,7 @@ function printInspection(insp, photos) {
 function AuthCard({ children }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:C.bg, padding:16 }}>
-      <div style={{ background:C.card, borderRadius:16, padding:32, width:"100%", maxWidth:380, border:"1px solid "+C.bdr, boxShadow:"0 25px 60px rgba(0,0,0,.6)" }}>
+      <div style={{ background:C.card, borderRadius:16, padding:32, width:"100%", maxWidth:380, border:"1px solid "+C.bdr, boxShadow:"0 18px 45px rgba(31,61,43,.14)" }}>
         <div style={{ textAlign:"center", marginBottom:28 }}>
           <div style={{ fontSize:48, marginBottom:12 }}>🚗</div>
           <h1 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>Réception – Tour du véhicule</h1>
@@ -450,8 +451,8 @@ function LoginView() {
       <div style={{ display:"flex", flexDirection:"column", gap:14 }} onKeyDown={e=>{if(e.key==="Enter"&&!busy)sendReset();}}>
         <p style={{ color:C.sub, fontSize:13, margin:0 }}>Saisis ton e-mail : tu recevras un lien pour redéfinir ton mot de passe.</p>
         <Inp label="E-mail" value={u} onChange={su} type="email" placeholder="prenom.nom@exemple.fr"/>
-        {err && <p style={{ color:"#f87171", fontSize:13, textAlign:"center", margin:0 }}>{err}</p>}
-        {msg && <p style={{ color:"#34d399", fontSize:13, textAlign:"center", margin:0 }}>{msg}</p>}
+        {err && <p style={{ color:"#d2564f", fontSize:13, textAlign:"center", margin:0 }}>{err}</p>}
+        {msg && <p style={{ color:"#2f9e6b", fontSize:13, textAlign:"center", margin:0 }}>{msg}</p>}
         <Btn full onClick={sendReset} disabled={busy}>{busy?"Envoi…":"Envoyer le lien"}</Btn>
         <button onClick={()=>{setMode("login");se("");sm("");}} style={{ background:"none", border:"none", color:C.acc2, cursor:"pointer", fontSize:13 }}>← Retour</button>
       </div>
@@ -462,7 +463,7 @@ function LoginView() {
       <div style={{ display:"flex", flexDirection:"column", gap:14 }} onKeyDown={e=>{if(e.key==="Enter"&&!busy)go();}}>
         <Inp label="E-mail (staff) ou identifiant (élève)" value={u} onChange={su} placeholder="prenom.nom@… ou Etudiant1"/>
         <Inp label="Mot de passe" value={p} onChange={sp} type="password" placeholder="••••••••"/>
-        {err && <p style={{ color:"#f87171", fontSize:13, textAlign:"center", margin:0 }}>{err}</p>}
+        {err && <p style={{ color:"#d2564f", fontSize:13, textAlign:"center", margin:0 }}>{err}</p>}
         <Btn full onClick={go} disabled={busy}>{busy?"Connexion…":"Se connecter"}</Btn>
         <button onClick={()=>{setMode("forgot");se("");sm("");}} style={{ background:"none", border:"none", color:C.acc2, cursor:"pointer", fontSize:13 }}>Mot de passe oublié ? (staff)</button>
       </div>
@@ -488,7 +489,7 @@ function ResetPasswordView({ notify, onDone }) {
         <p style={{ color:C.sub, fontSize:13, margin:0 }}>Définis ton nouveau mot de passe.</p>
         <Inp label="Nouveau mot de passe" value={p} onChange={sp} type="password" placeholder="••••••••"/>
         <Inp label="Confirmer" value={p2} onChange={sp2} type="password" placeholder="••••••••"/>
-        {err && <p style={{ color:"#f87171", fontSize:13, textAlign:"center", margin:0 }}>{err}</p>}
+        {err && <p style={{ color:"#d2564f", fontSize:13, textAlign:"center", margin:0 }}>{err}</p>}
         <Btn full onClick={go} disabled={busy}>{busy?"Enregistrement…":"Modifier le mot de passe"}</Btn>
       </div>
     </AuthCard>
@@ -514,14 +515,14 @@ function ListView({ inspections, nav, sel }) {
             {shown.map(i => (
               <div key={i.id} onClick={() => { sel(i.id); nav("detail"); }}
                 style={{ background:C.card, borderRadius:10, padding:"13px 16px", border:"1px solid "+C.bdr, cursor:"pointer", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}
-                onMouseEnter={e => e.currentTarget.style.background="#1a3050"} onMouseLeave={e => e.currentTarget.style.background=C.card}>
+                onMouseEnter={e => e.currentTarget.style.background="#eef6f0"} onMouseLeave={e => e.currentTarget.style.background=C.card}>
                 <div style={{ flex:1, minWidth:180 }}>
                   <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:4 }}>
                     <span style={{ color:C.acc2, fontWeight:700, fontSize:12 }}>{i.inspectionNum}</span>
                     <Badge status={i.status}/>
-                    {i.orderNum && <span style={{ fontSize:11, color:"#93c5fd" }}>🔧 {i.orderNum}</span>}
+                    {i.orderNum && <span style={{ fontSize:11, color:"#2f6fb0" }}>🔧 {i.orderNum}</span>}
                     {i.photos.length>0 && <span style={{ fontSize:11, color:C.sub }}>📷 {i.photos.length}</span>}
-                    {i.signature && <span style={{ fontSize:11, color:"#34d399" }}>✍</span>}
+                    {i.signature && <span style={{ fontSize:11, color:"#2f9e6b" }}>✍</span>}
                   </div>
                   <div style={{ color:C.txt, fontWeight:600 }}>{i.plate} – {i.brand} {i.model}</div>
                   <div style={{ color:C.sub, fontSize:12 }}>{i.clientName||"—"}</div>
@@ -551,7 +552,7 @@ function OrderPicker({ orders, onPick, onSkip }) {
         {shown.map(o => (
           <button key={o.id} type="button" onClick={() => onPick(o)}
             style={{ textAlign:"left", background:C.field, border:"1px solid "+C.bdr, borderRadius:7, padding:"8px 12px", cursor:"pointer", color:C.txt }}>
-            <span style={{ color:"#93c5fd", fontWeight:700, fontSize:12 }}>{o.orderNum}</span>
+            <span style={{ color:"#2f6fb0", fontWeight:700, fontSize:12 }}>{o.orderNum}</span>
             <span style={{ marginLeft:8, fontWeight:600 }}>{o.plate}</span>
             <span style={{ color:C.sub, fontSize:12 }}> · {o.brand} {o.model} · {o.clientName||"—"}</span>
           </button>
@@ -644,7 +645,7 @@ function NewInspection({ orders, add, edit, user, nav, sel, notify }) {
       </div>
       <Crd>
         {f.orderNum
-          ? <div style={{ marginBottom:8, padding:"8px 12px", background:C.field, borderRadius:8, fontSize:13, color:"#93c5fd" }}>🔧 Relié à l'ordre de réparation <b>{f.orderNum}</b></div>
+          ? <div style={{ marginBottom:8, padding:"8px 12px", background:C.field, borderRadius:8, fontSize:13, color:"#2f6fb0" }}>🔧 Relié à l'ordre de réparation <b>{f.orderNum}</b></div>
           : <div style={{ marginBottom:8 }}><Btn sm ghost onClick={() => setLinked(false)}>← Relier à un OR</Btn></div>}
 
         <SecTitle>🚙 Véhicule & client</SecTitle>
@@ -725,7 +726,7 @@ function NewInspection({ orders, add, edit, user, nav, sel, notify }) {
           {f.signature ? (
             <div>
               <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
-                <span style={{ color:"#34d399", fontSize:13, fontWeight:600 }}>✅ Signature enregistrée</span>
+                <span style={{ color:"#2f9e6b", fontSize:13, fontWeight:600 }}>✅ Signature enregistrée</span>
                 <Btn sm ghost onClick={()=>set("signature","")}>Resigner</Btn>
               </div>
               <img src={f.signature} alt="Signature" style={{ maxHeight:80, background:"#fff", borderRadius:6, padding:4, display:"block" }}/>
@@ -761,14 +762,14 @@ function DetailView({ inspId, inspections, remove, isAdmin, nav, notify }) {
           <div style={{ display:"flex", gap:8, marginTop:6, flexWrap:"wrap", alignItems:"center" }}>
             <Badge status={i.status}/>
             <span style={{ fontSize:13, color:C.sub }}>{i.brand} {i.model}</span>
-            {i.orderNum && <span style={{ fontSize:12, color:"#93c5fd" }}>🔧 OR {i.orderNum}</span>}
-            {i.signature && <span style={{ fontSize:12, color:"#34d399" }}>✍ Signé</span>}
+            {i.orderNum && <span style={{ fontSize:12, color:"#2f6fb0" }}>🔧 OR {i.orderNum}</span>}
+            {i.signature && <span style={{ fontSize:12, color:"#2f9e6b" }}>✍ Signé</span>}
           </div>
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           {/* Réimpression : les photos restent sur le Drive (on n'a plus le base64), on ne les ré-embarque pas. */}
           <Btn sm ghost onClick={()=>printInspection(i, [])} style={{ borderColor:C.acc, color:C.acc2 }}>📄 PDF</Btn>
-          {i.driveUrl && <a href={i.driveUrl} target="_blank" rel="noreferrer"><Btn sm ghost style={{ borderColor:"#16a34a", color:"#34d399" }}>📁 Dossier Drive</Btn></a>}
+          {i.driveUrl && <a href={i.driveUrl} target="_blank" rel="noreferrer"><Btn sm ghost style={{ borderColor:"#2f9e6b", color:"#2f9e6b" }}>📁 Dossier Drive</Btn></a>}
           {isAdmin && <Btn sm danger onClick={del}>Supprimer</Btn>}
         </div>
       </div>
@@ -806,12 +807,12 @@ function DetailView({ inspId, inspections, remove, isAdmin, nav, notify }) {
 
       {i.bodyDamages.length>0 && (
         <Crd style={{ marginBottom:12 }}>
-          <h3 style={{ color:"#fbbf24", fontSize:13, fontWeight:700, marginBottom:10 }}>⚠️ Dégâts préexistants relevés</h3>
+          <h3 style={{ color:"#c2871a", fontSize:13, fontWeight:700, marginBottom:10 }}>⚠️ Dégâts préexistants relevés</h3>
           <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
             {i.bodyDamages.map(d => (
               <div key={d.id} style={{ display:"flex", gap:10, fontSize:13, padding:"6px 0", borderBottom:"1px solid "+C.bdr }}>
                 <span style={{ color:C.txt, fontWeight:600, minWidth:140 }}>{d.zone}</span>
-                <span style={{ color:"#fbbf24" }}>{d.type}</span>
+                <span style={{ color:"#c2871a" }}>{d.type}</span>
                 <span style={{ color:C.sub }}>{d.note}</span>
               </div>
             ))}
@@ -868,7 +869,7 @@ export default function ReceptionApp() {
   if(recovery) return <ResetPasswordView notify={notify} onDone={async()=>{ clearRecovery(); await supabase.auth.signOut(); }}/>;
   if(!user) return <LoginView/>;
   const isAdmin = user.role === "admin";
-  const rs = ROLE_STYLE[user.role] || { bg:"#1e293b", cl:C.sub };
+  const rs = ROLE_STYLE[user.role] || { bg:"#eef2ef", cl:C.sub };
 
   const NAV = [{ id:"list", ico:"🚗", lbl:"États des lieux" }, { id:"new", ico:"➕", lbl:"Nouveau tour" }];
   const renderPage=()=>{
@@ -880,7 +881,7 @@ export default function ReceptionApp() {
   return (
     <div style={{ minHeight:"100vh", display:"flex", background:C.bg, color:C.txt }}>
       {notif && (
-        <div style={{ position:"fixed", top:16, right:16, zIndex:100, padding:"12px 18px", borderRadius:10, background:notif.type==="success"?"#052e16":"#450a0a", border:"1px solid "+(notif.type==="success"?"#16a34a":"#dc2626"), color:"#fff", fontSize:14, fontWeight:500, boxShadow:"0 8px 25px rgba(0,0,0,.5)", maxWidth:340 }}>
+        <div style={{ position:"fixed", top:16, right:16, zIndex:100, padding:"12px 18px", borderRadius:10, background:notif.type==="success"?"#e3f3ea":"#fdecea", border:"1px solid "+(notif.type==="success"?"#3f8059":"#d2564f"), color:notif.type==="success"?"#1f3d2b":"#8a241d", fontSize:14, fontWeight:500, boxShadow:"0 8px 22px rgba(31,61,43,.15)", maxWidth:340 }}>
           {notif.type==="success"?"✅":"❌"} {notif.msg}
         </div>
       )}
