@@ -272,22 +272,22 @@ function SigPad({ onSave, init }) {
       img.src = init;
     }
   }, []); // eslint-disable-line
+  // Pointer Events : gèrent doigt / souris / stylet et respectent touch-action:none
+  // → le tracé fonctionne de façon fiable sur smartphone (pas de défilement parasite).
   const getPos = (e) => {
     const r=cv.current.getBoundingClientRect(), sx=cv.current.width/r.width, sy=cv.current.height/r.height;
-    const s=e.touches?e.touches[0]:e;
-    return [(s.clientX-r.left)*sx, (s.clientY-r.top)*sy];
+    return [(e.clientX-r.left)*sx, (e.clientY-r.top)*sy];
   };
-  const dn=(e)=>{e.preventDefault();dr.current=true;const[x,y]=getPos(e);const ctx=cv.current.getContext("2d");ctx.beginPath();ctx.moveTo(x,y);};
-  const mv=(e)=>{if(!dr.current)return;e.preventDefault();const[x,y]=getPos(e);const ctx=cv.current.getContext("2d");ctx.strokeStyle="#3f8059";ctx.lineWidth=2;ctx.lineCap="round";ctx.lineTo(x,y);ctx.stroke();sh(true);};
-  const up=(e)=>{e.preventDefault();dr.current=false;};
+  const dn=(e)=>{ e.preventDefault(); dr.current=true; try{ cv.current.setPointerCapture(e.pointerId); }catch{ /* ignore */ } const[x,y]=getPos(e); const ctx=cv.current.getContext("2d"); ctx.beginPath(); ctx.moveTo(x,y); };
+  const mv=(e)=>{ if(!dr.current)return; e.preventDefault(); const[x,y]=getPos(e); const ctx=cv.current.getContext("2d"); ctx.strokeStyle="#1f3d2b"; ctx.lineWidth=2.4; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.lineTo(x,y); ctx.stroke(); sh(true); };
+  const up=(e)=>{ if(e&&e.preventDefault)e.preventDefault(); dr.current=false; };
   return (
     <div>
-      <canvas ref={cv} width={500} height={130}
-        style={{ width:"100%", background:"#fff", borderRadius:8, cursor:"crosshair", touchAction:"none", border:"2px solid "+C.bdr, display:"block" }}
-        onMouseDown={dn} onMouseMove={mv} onMouseUp={up} onMouseLeave={up}
-        onTouchStart={dn} onTouchMove={mv} onTouchEnd={up}/>
+      <canvas ref={cv} width={500} height={150}
+        style={{ width:"100%", background:"#fff", borderRadius:8, cursor:"crosshair", touchAction:"none", WebkitUserSelect:"none", userSelect:"none", border:"2px solid "+C.bdr, display:"block" }}
+        onPointerDown={dn} onPointerMove={mv} onPointerUp={up} onPointerLeave={up} onPointerCancel={up}/>
       <div style={{ display:"flex", gap:8, marginTop:6 }}>
-        <Btn sm ghost onClick={() => { cv.current.getContext("2d").clearRect(0,0,500,130); sh(false); if(onSave) onSave(""); }}>Effacer</Btn>
+        <Btn sm ghost onClick={() => { cv.current.getContext("2d").clearRect(0,0,cv.current.width,cv.current.height); sh(false); if(onSave) onSave(""); }}>Effacer</Btn>
         <Btn sm disabled={!has} onClick={() => { if(onSave) onSave(cv.current.toDataURL()); }}>Valider la signature</Btn>
       </div>
     </div>
