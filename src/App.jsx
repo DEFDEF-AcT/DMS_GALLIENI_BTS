@@ -515,32 +515,45 @@ function ListView({ inspections, nav, sel }) {
       </div>
       <input value={q} onChange={e => sq(e.target.value)} placeholder="🔍 Immatriculation, client, n° fiche, OR…"
         style={{ background:C.card, border:"1px solid "+C.bdr, borderRadius:8, padding:"10px 14px", color:C.txt, fontSize:13, outline:"none" }}/>
-      {shown.length===0
-        ? <Crd><p style={{ color:C.mut, textAlign:"center", margin:0 }}>Aucun état des lieux. Démarre un tour du véhicule à l'arrivée d'un client.</p></Crd>
-        : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {shown.map(i => (
-              <div key={i.id} onClick={() => { sel(i.id); nav("detail"); }}
-                style={{ background:C.card, borderRadius:10, padding:"13px 16px", border:"1px solid "+C.bdr, cursor:"pointer", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}
-                onMouseEnter={e => e.currentTarget.style.background="#eef6f0"} onMouseLeave={e => e.currentTarget.style.background=C.card}>
-                <div style={{ flex:1, minWidth:180 }}>
-                  <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:4 }}>
-                    <span style={{ color:C.acc2, fontWeight:700, fontSize:12 }}>{i.inspectionNum}</span>
-                    <Badge status={i.status}/>
-                    {i.orderNum && <span style={{ fontSize:11, color:"#2f6fb0" }}>🔧 {i.orderNum}</span>}
-                    {i.photos.length>0 && <span style={{ fontSize:11, color:C.sub }}>📷 {i.photos.length}</span>}
-                    {i.signature && <span style={{ fontSize:11, color:"#2f9e6b" }}>✍</span>}
+
+      {/* Historique des réceptions déjà réalisées, avec le n° d'OR associé. */}
+      <div>
+        <h3 style={{ color:C.acc2, fontSize:14, fontWeight:700, margin:"4px 0 10px", paddingBottom:6, borderBottom:"1px solid "+C.bdr }}>
+          📋 Historique des réceptions {q ? `(${shown.length})` : ""}
+        </h3>
+        {shown.length===0
+          ? <Crd><p style={{ color:C.mut, textAlign:"center", margin:0 }}>{q ? "Aucune réception ne correspond à la recherche." : "Aucune réception enregistrée pour le moment."}</p></Crd>
+          : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {shown.map(i => (
+                <div key={i.id} onClick={() => { sel(i.id); nav("detail"); }}
+                  style={{ background:C.card, borderRadius:10, padding:"13px 16px", border:"1px solid "+C.bdr, cursor:"pointer", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}
+                  onMouseEnter={e => e.currentTarget.style.background="#eef6f0"} onMouseLeave={e => e.currentTarget.style.background=C.card}>
+                  <div style={{ flex:1, minWidth:200 }}>
+                    <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:4 }}>
+                      <span style={{ color:C.acc2, fontWeight:700, fontSize:12 }}>{i.inspectionNum}</span>
+                      <Badge status={i.status}/>
+                      {i.photos.length>0 && <span style={{ fontSize:11, color:C.sub }}>📷 {i.photos.length}</span>}
+                      {i.signature && <span style={{ fontSize:11, color:"#2f9e6b" }}>✍ signé</span>}
+                    </div>
+                    <div style={{ color:C.txt, fontWeight:600 }}>{i.plate} – {i.brand} {i.model}</div>
+                    <div style={{ color:C.sub, fontSize:12 }}>{i.clientName||"—"}</div>
+                    {/* N° d'ordre de réparation associé */}
+                    <div style={{ marginTop:4 }}>
+                      {i.orderNum
+                        ? <span style={{ display:"inline-block", fontSize:12, fontWeight:600, color:"#2f6fb0", background:"#e4eefb", border:"1px solid #2f6fb033", borderRadius:6, padding:"2px 8px" }}>🔧 OR associé : {i.orderNum}</span>
+                        : <span style={{ fontSize:12, color:C.mut }}>Sans OR associé</span>}
+                    </div>
                   </div>
-                  <div style={{ color:C.txt, fontWeight:600 }}>{i.plate} – {i.brand} {i.model}</div>
-                  <div style={{ color:C.sub, fontSize:12 }}>{i.clientName||"—"}</div>
+                  <div style={{ textAlign:"right", color:C.mut, fontSize:12 }}>
+                    <div>Reçu le {fD(i.createdAt)}</div>
+                    <div>Entrée : {fD(i.entryDate)}</div>
+                    {i.km && <div>{Number(i.km).toLocaleString("fr-FR")} km</div>}
+                  </div>
                 </div>
-                <div style={{ textAlign:"right", color:C.mut, fontSize:12 }}>
-                  <div>Entrée : {fD(i.entryDate)}</div>
-                  {i.km && <div>{Number(i.km).toLocaleString("fr-FR")} km</div>}
-                </div>
-              </div>
-            ))}
-          </div>
-      }
+              ))}
+            </div>
+        }
+      </div>
     </div>
   );
 }
