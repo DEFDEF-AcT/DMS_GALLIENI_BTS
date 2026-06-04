@@ -28,6 +28,9 @@ const roleLabel = (r) => ROLE_LABEL[r] || r;
 const STUDENT_DOMAIN = "eleve.gallieni.local";
 const toLoginEmail = (v) => v.includes("@") ? v.trim() : v.trim().toLowerCase() + "@" + STUDENT_DOMAIN;
 const APP_URL = window.location.origin + import.meta.env.BASE_URL;
+// Marqueur de version visible : permet de vérifier qu'un appareil a bien chargé
+// la dernière version (et non une page en cache). À incrémenter à chaque mise à jour.
+const APP_VERSION = "2026-06-04 · sig-mobile-2";
 
 // ── Référentiels du tour du véhicule ─────────────────────────────────────────
 const TIRE_POS = [
@@ -475,6 +478,7 @@ function LoginView() {
       </div>
       <div style={{ marginTop:20, padding:12, background:C.field, borderRadius:8, fontSize:12, color:C.mut, textAlign:"center" }}>
         Mêmes comptes que le DMS. Staff : e-mail · Élèves : « EtudiantN ».
+        <div style={{ marginTop:6, fontSize:11 }}>Version : {APP_VERSION}</div>
       </div>
     </AuthCard>
   );
