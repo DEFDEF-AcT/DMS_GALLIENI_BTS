@@ -429,9 +429,9 @@ function AuthCard({ children }) {
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:C.bg, padding:16 }}>
       <div style={{ background:C.card, borderRadius:16, padding:32, width:"100%", maxWidth:380, border:"1px solid "+C.bdr, boxShadow:"0 18px 45px rgba(31,61,43,.14)" }}>
         <div style={{ textAlign:"center", marginBottom:28 }}>
-          <div style={{ fontSize:42, marginBottom:12, letterSpacing:2 }}>🚗🚛</div>
-          <h1 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>Réception – Tour du véhicule</h1>
-          <p style={{ color:C.mut, fontSize:13, marginTop:6 }}>Lycée Gallieni · Atelier BTS MV / VTR</p>
+          <div style={{ fontSize:42, marginBottom:12 }}>🚗 🚛</div>
+          <h1 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>Réception Atelier Véhicule</h1>
+          <p style={{ color:C.mut, fontSize:13, marginTop:6 }}>Lycée Gallieni - BTS MV</p>
         </div>
         {children}
       </div>
@@ -643,7 +643,7 @@ function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, 
   if(!linked) return (
     <div style={{ maxWidth:760, margin:"0 auto" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 }}>
-        <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗🚛 Nouvelle réception d'un véhicule</h2>
+        <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗 🚛 Nouvelle réception d'un véhicule</h2>
         <Btn ghost sm onClick={() => nav("list")}>← Retour</Btn>
       </div>
       <Crd>
@@ -922,13 +922,10 @@ function AuthedApp({ user, notify, isDesktop, onLogout }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", background:C.bg, color:C.txt }}>
       <header style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 16px", background:C.hdr, borderBottom:"1px solid "+C.bdr, position:"sticky", top:0, zIndex:30 }}>
-        {/* Logo VL + poids lourd (VTR). Cliquer le titre revient aux états des lieux. */}
-        <button onClick={()=>nav("list")} style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0, minWidth:0 }}>
-          <span style={{ fontSize:22, whiteSpace:"nowrap" }}>🚗🚛</span>
-          <span style={{ minWidth:0 }}>
-            <div style={{ color:C.acc2, fontWeight:700, fontSize:14 }}>Réception – Tour du véhicule</div>
-            <div style={{ color:C.mut, fontSize:11 }}>Lycée Gallieni · BTS MV / VTR</div>
-          </span>
+        {/* Titre cliquable : revient aux états des lieux. */}
+        <button onClick={()=>nav("list")} style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0, minWidth:0 }}>
+          <div style={{ color:C.acc2, fontWeight:700, fontSize:15 }}>Réception Atelier Véhicule</div>
+          <div style={{ color:C.mut, fontSize:11 }}>Lycée Gallieni - BTS MV</div>
         </button>
         <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
           {isDesktop && <span style={{ color:C.sub, fontSize:13 }}>{user.name}</span>}
