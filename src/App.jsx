@@ -510,7 +510,7 @@ function ListView({ inspections, nav, sel }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-        <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗 États des lieux ({inspections.length})</h2>
+        <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗 🚛 États des lieux ({inspections.length})</h2>
         <Btn onClick={() => nav("new")}>+ Nouvelle réception d'un véhicule</Btn>
       </div>
       <input value={q} onChange={e => sq(e.target.value)} placeholder="🔍 Immatriculation, client, n° fiche, OR…"
