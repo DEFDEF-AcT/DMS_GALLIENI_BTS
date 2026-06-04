@@ -30,7 +30,7 @@ const toLoginEmail = (v) => v.includes("@") ? v.trim() : v.trim().toLowerCase() 
 const APP_URL = window.location.origin + import.meta.env.BASE_URL;
 // Marqueur de version visible : permet de vérifier qu'un appareil a bien chargé
 // la dernière version (et non une page en cache). À incrémenter à chaque mise à jour.
-const APP_VERSION = "2026-06-04 · sig-mobile-2";
+const APP_VERSION = "2026-06-04 · sig-mobile-3";
 
 // ── Référentiels du tour du véhicule ─────────────────────────────────────────
 const TIRE_POS = [
@@ -266,29 +266,55 @@ function ChipSelect({ value, opts, onChange }) {
 }
 
 function SigPad({ onSave, init }) {
-  const cv = useRef(); const dr = useRef(false);
+  const cv = useRef();
   const [has, sh] = useState(!!init);
+  // Écouteurs NATIFS attachés à la main : indispensable sur iOS car React pose
+  // ses écouteurs « touch » en mode passif → e.preventDefault() y est ignoré et
+  // le doigt fait défiler la page au lieu de tracer. Ici { passive:false } le permet.
   useEffect(() => {
-    if (init && cv.current) {
-      const img = new Image();
-      img.onload = () => { if (cv.current) cv.current.getContext("2d").drawImage(img,0,0); sh(true); };
-      img.src = init;
-    }
+    const canvas = cv.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (init) { const img = new Image(); img.onload = () => { ctx.drawImage(img,0,0); sh(true); }; img.src = init; }
+    let drawing = false;
+    const pos = (clientX, clientY) => {
+      const r = canvas.getBoundingClientRect();
+      return [ (clientX - r.left) * (canvas.width / r.width), (clientY - r.top) * (canvas.height / r.height) ];
+    };
+    const start = (x, y) => { drawing = true; ctx.beginPath(); ctx.moveTo(...pos(x, y)); };
+    const move = (x, y) => {
+      if (!drawing) return;
+      const [px, py] = pos(x, y);
+      ctx.strokeStyle = "#1f3d2b"; ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.lineTo(px, py); ctx.stroke(); sh(true);
+    };
+    const end = () => { drawing = false; };
+    const ts = (e) => { e.preventDefault(); const t = e.touches[0]; if (t) start(t.clientX, t.clientY); };
+    const tm = (e) => { e.preventDefault(); const t = e.touches[0]; if (t) move(t.clientX, t.clientY); };
+    const te = (e) => { e.preventDefault(); end(); };
+    const md = (e) => start(e.clientX, e.clientY);
+    const mm = (e) => move(e.clientX, e.clientY);
+    const mu = () => end();
+    canvas.addEventListener("touchstart", ts, { passive: false });
+    canvas.addEventListener("touchmove", tm, { passive: false });
+    canvas.addEventListener("touchend", te, { passive: false });
+    canvas.addEventListener("touchcancel", te, { passive: false });
+    canvas.addEventListener("mousedown", md);
+    window.addEventListener("mousemove", mm);
+    window.addEventListener("mouseup", mu);
+    return () => {
+      canvas.removeEventListener("touchstart", ts);
+      canvas.removeEventListener("touchmove", tm);
+      canvas.removeEventListener("touchend", te);
+      canvas.removeEventListener("touchcancel", te);
+      canvas.removeEventListener("mousedown", md);
+      window.removeEventListener("mousemove", mm);
+      window.removeEventListener("mouseup", mu);
+    };
   }, []); // eslint-disable-line
-  // Pointer Events : gèrent doigt / souris / stylet et respectent touch-action:none
-  // → le tracé fonctionne de façon fiable sur smartphone (pas de défilement parasite).
-  const getPos = (e) => {
-    const r=cv.current.getBoundingClientRect(), sx=cv.current.width/r.width, sy=cv.current.height/r.height;
-    return [(e.clientX-r.left)*sx, (e.clientY-r.top)*sy];
-  };
-  const dn=(e)=>{ e.preventDefault(); dr.current=true; try{ cv.current.setPointerCapture(e.pointerId); }catch{ /* ignore */ } const[x,y]=getPos(e); const ctx=cv.current.getContext("2d"); ctx.beginPath(); ctx.moveTo(x,y); };
-  const mv=(e)=>{ if(!dr.current)return; e.preventDefault(); const[x,y]=getPos(e); const ctx=cv.current.getContext("2d"); ctx.strokeStyle="#1f3d2b"; ctx.lineWidth=2.4; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.lineTo(x,y); ctx.stroke(); sh(true); };
-  const up=(e)=>{ if(e&&e.preventDefault)e.preventDefault(); dr.current=false; };
   return (
     <div>
       <canvas ref={cv} width={500} height={150}
-        style={{ width:"100%", background:"#fff", borderRadius:8, cursor:"crosshair", touchAction:"none", WebkitUserSelect:"none", userSelect:"none", border:"2px solid "+C.bdr, display:"block" }}
-        onPointerDown={dn} onPointerMove={mv} onPointerUp={up} onPointerLeave={up} onPointerCancel={up}/>
+        style={{ width:"100%", background:"#fff", borderRadius:8, cursor:"crosshair", touchAction:"none", WebkitUserSelect:"none", userSelect:"none", border:"2px solid "+C.bdr, display:"block" }}/>
       <div style={{ display:"flex", gap:8, marginTop:6 }}>
         <Btn sm ghost onClick={() => { cv.current.getContext("2d").clearRect(0,0,cv.current.width,cv.current.height); sh(false); if(onSave) onSave(""); }}>Effacer</Btn>
         <Btn sm disabled={!has} onClick={() => { if(onSave) onSave(cv.current.toDataURL()); }}>Valider la signature</Btn>
@@ -706,13 +732,13 @@ function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, 
           : <div style={{ marginBottom:8 }}><Btn sm ghost onClick={() => setLinked(false)}>← Relier à un OR</Btn></div>}
 
         <SecTitle>🚙 Véhicule & client</SecTitle>
-        {locked && <p style={{ color:C.mut, fontSize:12, margin:"-4px 0 10px" }}>🔒 Informations client et véhicule importées de l'OR {f.orderNum} (non modifiables). Seul le carburant est saisissable.</p>}
+        {locked && <p style={{ color:C.mut, fontSize:12, margin:"-4px 0 10px" }}>🔒 Informations client et véhicule importées de l'OR {f.orderNum} (non modifiables). Le carburant et le kilométrage restent saisissables.</p>}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:12 }}>
           <Inp label="Immatriculation *" value={f.plate} onChange={v=>set("plate",v)} placeholder="AB-123-CD" readOnly={locked}/>
           <Inp label="Marque" value={f.brand} onChange={v=>set("brand",v)} placeholder="Peugeot" readOnly={locked}/>
           <Inp label="Modèle" value={f.model} onChange={v=>set("model",v)} placeholder="308 SW" readOnly={locked}/>
           <Inp label="Année" value={f.year} onChange={v=>set("year",v)} placeholder="2021" readOnly={locked}/>
-          <Inp label="Kilométrage" value={f.km} onChange={v=>set("km",v)} placeholder="45000" readOnly={locked}/>
+          <Inp label="Kilométrage" value={f.km} onChange={v=>set("km",v)} placeholder="45000"/>
           <Sel label="Niveau de carburant" value={f.fuel} onChange={v=>set("fuel",v)} opts={["",...FUEL_STATE].map(x=>({v:x,l:x||"— Choisir —"}))}/>
           <Inp label="Nom du client" value={f.clientName} onChange={v=>set("clientName",v)} placeholder="M. Dupont" readOnly={locked}/>
           <Inp label="Téléphone" value={f.clientPhone} onChange={v=>set("clientPhone",v)} placeholder="06 12 34 56 78" readOnly={locked}/>
