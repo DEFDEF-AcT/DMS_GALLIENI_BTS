@@ -24,6 +24,7 @@ create table if not exists inspections (
   plate           text not null,
   brand           text default '',
   model           text default '',
+  year            text default '',                   -- année (importée de l'OR)
   km              text default '',                   -- kilométrage relevé à l'entrée
   fuel            text default '',                   -- niveau de carburant (jauge)
   client_name     text default '',

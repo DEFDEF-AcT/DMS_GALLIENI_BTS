@@ -14,7 +14,7 @@ export function rowToInspection(r) {
     inspectionNum: r.inspection_num,
     orderId: r.order_id || "",
     orderNum: r.order_num || "",
-    plate: r.plate, brand: r.brand || "", model: r.model || "",
+    plate: r.plate, brand: r.brand || "", model: r.model || "", year: r.year || "",
     km: r.km || "", fuel: r.fuel || "",
     clientName: r.client_name || "", clientPhone: r.client_phone || "",
     entryDate: r.entry_date || "", entryTime: r.entry_time || "",

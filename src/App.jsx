@@ -76,7 +76,7 @@ const DEMO_ORDERS = [
 ];
 const DEMO_INSPECTIONS = [{
   id:"i1", inspectionNum:"REC-2026-0007", orderId:"o2", orderNum:"OR-2026-0043",
-  plate:"GK-908-ZT", brand:"Renault", model:"Clio V", km:"41200", fuel:"1/2",
+  plate:"GK-908-ZT", brand:"Renault", model:"Clio V", year:"2020", km:"41200", fuel:"1/2",
   clientName:"Mme Martin", clientPhone:"06 98 76 54 32", entryDate:_demoDay, entryTime:"10:30",
   tires:{ fl:{state:"Bon",depth:"5.5"}, fr:{state:"Bon",depth:"5.0"}, rl:{state:"Usé",depth:"3.0"}, rr:{state:"Usé",depth:"2.8"} },
   windshield:{ state:"Impact", note:"Impact côté passager, bas du pare-brise" }, windows:{ state:"RAS", note:"" },
@@ -396,7 +396,7 @@ function inspectionHTML(insp, photos) {
 <div class="om">Entrée le ${fD(insp.entryDate)} à ${esc(insp.entryTime||"—")}</div><div class="om">Réceptionné par : ${esc(insp.createdBy||"—")}</div></div></div>
 <div class="sec"><div class="sh">Véhicule</div><div class="grid g5">
 ${row("Immatriculation", insp.plate)}${row("Marque", insp.brand)}${row("Modèle", insp.model)}
-${row("Kilométrage", insp.km?insp.km+" km":"")}${row("Carburant", insp.fuel)}</div></div>
+${row("Année", insp.year)}${row("Kilométrage", insp.km?insp.km+" km":"")}${row("Carburant", insp.fuel)}</div></div>
 <div class="sec"><div class="sh">Client</div><div class="grid g2">
 ${row("Nom du client", insp.clientName)}${row("Téléphone", insp.clientPhone)}</div></div>
 <div class="sec"><div class="sh">Pneumatiques</div><div class="grid g4">${tiresHTML}</div></div>
@@ -625,7 +625,7 @@ function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, 
   const [linked,setLinked]=useState(false);   // un OR a-t-il été choisi (ou saisie manuelle confirmée) ?
   const [photos,setPhotos]=useState([]);      // [{id,label,dataUrl}] — non encore uploadées
   const [f,sf]=useState({
-    orderId:"", orderNum:"", plate:"", brand:"", model:"", km:"", fuel:"",
+    orderId:"", orderNum:"", plate:"", brand:"", model:"", year:"", km:"", fuel:"",
     clientName:"", clientPhone:"", entryDate:today(), entryTime:tNow(),
     tires:{ fl:{state:"",depth:""}, fr:{state:"",depth:""}, rl:{state:"",depth:""}, rr:{state:"",depth:""} },
     windshield:{ state:"", note:"" }, windows:{ state:"", note:"" },
@@ -633,8 +633,11 @@ function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, 
     bodyDamages:[], generalNote:"", signature:"",
   });
   const set=(k,v)=>sf(p=>({...p,[k]:v}));
+  // Verrouillage : quand un OR est lié, les infos client + véhicule viennent du DMS
+  // et ne sont pas modifiables (seul le carburant reste saisissable).
+  const locked = !!f.orderId;
   const setTire=(pos,key,v)=>sf(p=>({...p,tires:{...p.tires,[pos]:{...p.tires[pos],[key]:v}}}));
-  const pickOrder=(o)=>{ sf(p=>({...p,orderId:o.id,orderNum:o.orderNum,plate:o.plate,brand:o.brand,model:o.model,km:o.km,clientName:o.clientName,clientPhone:o.clientPhone,entryDate:o.entryDate||today(),entryTime:o.entryTime||tNow()})); setLinked(true); };
+  const pickOrder=(o)=>{ sf(p=>({...p,orderId:o.id,orderNum:o.orderNum,plate:o.plate,brand:o.brand,model:o.model,year:o.year,km:o.km,clientName:o.clientName,clientPhone:o.clientPhone,entryDate:o.entryDate||today(),entryTime:o.entryTime||tNow()})); setLinked(true); };
   const addDamage=()=>set("bodyDamages",[...f.bodyDamages,{id:gid(),zone:BODY_ZONES[0],type:DAMAGE_TYPE[0],note:""}]);
   const setDamage=(id,key,v)=>set("bodyDamages",f.bodyDamages.map(d=>d.id===id?{...d,[key]:v}:d));
   const delDamage=(id)=>set("bodyDamages",f.bodyDamages.filter(d=>d.id!==id));
@@ -646,7 +649,7 @@ function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, 
       // 1) Créer la fiche (le n° REC-AAAA-XXXX est généré par la base).
       const rec = {
         orderId:f.orderId||null, orderNum:f.orderNum, plate:f.plate.toUpperCase(),
-        brand:f.brand, model:f.model, km:f.km, fuel:f.fuel,
+        brand:f.brand, model:f.model, year:f.year, km:f.km, fuel:f.fuel,
         clientName:f.clientName, clientPhone:f.clientPhone, entryDate:f.entryDate, entryTime:f.entryTime,
         tires:f.tires, windshield:f.windshield, windows:f.windows, wipers:f.wipers,
         interior:f.interior, bodyDamages:f.bodyDamages, generalNote:f.generalNote,
@@ -703,14 +706,16 @@ function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, 
           : <div style={{ marginBottom:8 }}><Btn sm ghost onClick={() => setLinked(false)}>← Relier à un OR</Btn></div>}
 
         <SecTitle>🚙 Véhicule & client</SecTitle>
+        {locked && <p style={{ color:C.mut, fontSize:12, margin:"-4px 0 10px" }}>🔒 Informations client et véhicule importées de l'OR {f.orderNum} (non modifiables). Seul le carburant est saisissable.</p>}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:12 }}>
-          <Inp label="Immatriculation *" value={f.plate} onChange={v=>set("plate",v)} placeholder="AB-123-CD"/>
-          <Inp label="Marque" value={f.brand} onChange={v=>set("brand",v)} placeholder="Peugeot"/>
-          <Inp label="Modèle" value={f.model} onChange={v=>set("model",v)} placeholder="308 SW"/>
-          <Inp label="Kilométrage relevé" value={f.km} onChange={v=>set("km",v)} placeholder="45000"/>
+          <Inp label="Immatriculation *" value={f.plate} onChange={v=>set("plate",v)} placeholder="AB-123-CD" readOnly={locked}/>
+          <Inp label="Marque" value={f.brand} onChange={v=>set("brand",v)} placeholder="Peugeot" readOnly={locked}/>
+          <Inp label="Modèle" value={f.model} onChange={v=>set("model",v)} placeholder="308 SW" readOnly={locked}/>
+          <Inp label="Année" value={f.year} onChange={v=>set("year",v)} placeholder="2021" readOnly={locked}/>
+          <Inp label="Kilométrage" value={f.km} onChange={v=>set("km",v)} placeholder="45000" readOnly={locked}/>
           <Sel label="Niveau de carburant" value={f.fuel} onChange={v=>set("fuel",v)} opts={["",...FUEL_STATE].map(x=>({v:x,l:x||"— Choisir —"}))}/>
-          <Inp label="Nom du client" value={f.clientName} onChange={v=>set("clientName",v)} placeholder="M. Dupont"/>
-          <Inp label="Téléphone" value={f.clientPhone} onChange={v=>set("clientPhone",v)} placeholder="06 12 34 56 78"/>
+          <Inp label="Nom du client" value={f.clientName} onChange={v=>set("clientName",v)} placeholder="M. Dupont" readOnly={locked}/>
+          <Inp label="Téléphone" value={f.clientPhone} onChange={v=>set("clientPhone",v)} placeholder="06 12 34 56 78" readOnly={locked}/>
           <Inp label="Date d'entrée" value={f.entryDate} onChange={v=>set("entryDate",v)} type="date"/>
           <Inp label="Heure d'entrée" value={f.entryTime} onChange={v=>set("entryTime",v)} type="time"/>
         </div>
@@ -847,6 +852,7 @@ function DetailView({ inspId, inspections, edit, remove, isAdmin, nav, notify })
         <h3 style={{ color:C.acc2, fontSize:13, fontWeight:700, marginBottom:10 }}>Véhicule & client</h3>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:12, fontSize:13 }}>
           {row("Entrée", fD(i.entryDate)+" "+(i.entryTime||""))}
+          {row("Année", i.year)}
           {row("Kilométrage", i.km?Number(i.km).toLocaleString("fr-FR")+" km":"")}
           {row("Carburant", i.fuel)}
           {row("Client", i.clientName)}
