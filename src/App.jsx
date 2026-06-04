@@ -122,9 +122,15 @@ function compressImage(file, max = 1280, quality = 0.7) {
 function useCollection(listFn, table, demoData) {
   const [items, setItems] = useState(DEMO ? (demoData || []) : []);
   const [loading, setLoading] = useState(!DEMO);
+  const [error, setError] = useState(null);
   const reload = useCallback(() => {
     if (DEMO) return;
-    listFn().then(setItems).catch((e) => console.error("[Réception] " + table, e)).finally(() => setLoading(false));
+    // setState uniquement dans les callbacks asynchrones (évite les rendus en
+    // cascade signalés par react-hooks/set-state-in-effect).
+    listFn()
+      .then((d) => { setItems(d); setError(null); })
+      .catch((e) => { console.error("[Réception] " + table, e); setError(e); })
+      .finally(() => setLoading(false));
   }, [listFn, table]);
   useEffect(() => {
     if (DEMO) return;
@@ -133,7 +139,7 @@ function useCollection(listFn, table, demoData) {
       .on("postgres_changes", { event: "*", schema: "public", table }, reload).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [reload, table]);
-  return { items, setItems, loading, reload };
+  return { items, setItems, loading, error, reload };
 }
 function useInspections() {
   const { items, setItems, loading, reload } = useCollection(listInspections, "inspections", DEMO_INSPECTIONS);
@@ -540,7 +546,7 @@ function ListView({ inspections, nav, sel }) {
 }
 
 // Recherche / sélection d'un ordre de réparation à relier.
-function OrderPicker({ orders, onPick, onSkip }) {
+function OrderPicker({ orders, loading, error, onReload, onPick, onSkip }) {
   const [q,sq]=useState("");
   const shown = orders.filter(o => !q || [o.plate,o.brand,o.model,o.clientName,o.orderNum].join(" ").toLowerCase().includes(q.toLowerCase())).slice(0,40);
   return (
@@ -548,8 +554,19 @@ function OrderPicker({ orders, onPick, onSkip }) {
       <input value={q} onChange={e=>sq(e.target.value)} placeholder="🔍 Rechercher un OR (immat, client, n°)…"
         style={{ width:"100%", background:C.field, border:"1px solid "+C.bdr, borderRadius:6, padding:"8px 10px", color:C.txt, fontSize:13, outline:"none", marginBottom:10 }}/>
       <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:240, overflowY:"auto" }}>
-        {shown.length===0 && <p style={{ color:C.mut, fontSize:13, margin:"4px 0" }}>Aucun OR trouvé.</p>}
-        {shown.map(o => (
+        {loading && <p style={{ color:C.mut, fontSize:13, margin:"4px 0" }}>Chargement des ordres de réparation…</p>}
+        {!loading && error && (
+          <div style={{ background:"#fdecea", border:"1px solid #d2564f55", borderRadius:8, padding:10 }}>
+            <p style={{ color:"#8a241d", fontSize:13, margin:"0 0 8px" }}>Impossible de charger les OR : {error.message || String(error)}</p>
+            <Btn sm ghost onClick={onReload}>↻ Réessayer</Btn>
+          </div>
+        )}
+        {!loading && !error && shown.length===0 && (
+          <p style={{ color:C.mut, fontSize:13, margin:"4px 0" }}>
+            {orders.length===0 ? "Aucun ordre de réparation visible pour votre compte." : "Aucun OR ne correspond à la recherche."}
+          </p>
+        )}
+        {!loading && !error && shown.map(o => (
           <button key={o.id} type="button" onClick={() => onPick(o)}
             style={{ textAlign:"left", background:C.field, border:"1px solid "+C.bdr, borderRadius:7, padding:"8px 12px", cursor:"pointer", color:C.txt }}>
             <span style={{ color:"#2f6fb0", fontWeight:700, fontSize:12 }}>{o.orderNum}</span>
@@ -558,7 +575,8 @@ function OrderPicker({ orders, onPick, onSkip }) {
           </button>
         ))}
       </div>
-      <div style={{ marginTop:10 }}>
+      <div style={{ marginTop:10, display:"flex", gap:8, flexWrap:"wrap" }}>
+        <Btn sm ghost onClick={onReload}>↻ Rafraîchir la liste</Btn>
         <Btn sm ghost onClick={onSkip}>Continuer sans OR (saisie manuelle) →</Btn>
       </div>
     </div>
@@ -566,7 +584,7 @@ function OrderPicker({ orders, onPick, onSkip }) {
 }
 
 // ── Nouveau tour du véhicule ────────────────────────────────────────────────────
-function NewInspection({ orders, add, edit, user, nav, sel, notify }) {
+function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, edit, user, nav, sel, notify }) {
   const [busy,sbusy]=useState(false);
   const [linked,setLinked]=useState(false);   // un OR a-t-il été choisi (ou saisie manuelle confirmée) ?
   const [photos,setPhotos]=useState([]);      // [{id,label,dataUrl}] — non encore uploadées
@@ -631,7 +649,7 @@ function NewInspection({ orders, add, edit, user, nav, sel, notify }) {
       <Crd>
         <SecTitle>🔧 Relier à un ordre de réparation</SecTitle>
         <p style={{ color:C.sub, fontSize:13, marginBottom:12 }}>Choisis l'OR du véhicule qui arrive (pré-remplit les informations), ou poursuis sans OR.</p>
-        <OrderPicker orders={orders} onPick={pickOrder} onSkip={() => setLinked(true)}/>
+        <OrderPicker orders={orders} loading={ordersLoading} error={ordersError} onReload={reloadOrders} onPick={pickOrder} onSkip={() => setLinked(true)}/>
       </Crd>
     </div>
   );
@@ -881,39 +899,29 @@ function DetailView({ inspId, inspections, edit, remove, isAdmin, nav, notify })
   );
 }
 
-// ── Racine ──────────────────────────────────────────────────────────────────────
-export default function ReceptionApp() {
-  const { user, ready, recovery, clearRecovery } = useSession();
+// ── Application authentifiée ─────────────────────────────────────────────────
+// Montée UNIQUEMENT après connexion (cf. ReceptionApp). C'est essentiel : ainsi
+// le chargement des OR et des fiches s'exécute avec une session valide. Avant ce
+// découpage, les données étaient lues au tout premier rendu — donc en anonyme sur
+// un appareil où l'on se connecte « à frais » (téléphone) → listes vides.
+function AuthedApp({ user, notify, isDesktop, onLogout }) {
   const { inspections, add, edit, remove } = useInspections();
-  const { items: orders } = useCollection(listOrdersLite, "orders", DEMO_ORDERS);
+  const { items: orders, loading: ordersLoading, error: ordersError, reload: reloadOrders } = useCollection(listOrdersLite, "orders", DEMO_ORDERS);
   const [page,sp]=useState("list");
   const [selId,ssi]=useState(null); const [sideOpen,sso]=useState(false);
-  const [notif,sn]=useState(null);
-  const isDesktop=useDesktop();
-  const notify=useCallback((msg,type)=>{ sn({msg,type:type||"success"}); setTimeout(()=>sn(null),3800); },[]);
   const nav=(p)=>{ sp(p); sso(false); };
-  const logout=async()=>{ await supabase.auth.signOut(); sp("list"); ssi(null); };
-
-  if(!ready) return <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:C.bg, color:C.sub }}>Chargement…</div>;
-  if(recovery) return <ResetPasswordView notify={notify} onDone={async()=>{ clearRecovery(); await supabase.auth.signOut(); }}/>;
-  if(!user) return <LoginView/>;
   const isAdmin = user.role === "admin";
   const rs = ROLE_STYLE[user.role] || { bg:"#eef2ef", cl:C.sub };
 
   const NAV = [{ id:"list", ico:"🚗", lbl:"États des lieux" }, { id:"new", ico:"➕", lbl:"Nouveau tour" }];
   const renderPage=()=>{
-    if(page==="new")    return <NewInspection orders={orders} add={add} edit={edit} user={user} nav={nav} sel={ssi} notify={notify}/>;
+    if(page==="new")    return <NewInspection orders={orders} ordersLoading={ordersLoading} ordersError={ordersError} reloadOrders={reloadOrders} add={add} edit={edit} user={user} nav={nav} sel={ssi} notify={notify}/>;
     if(page==="detail") return selId ? <DetailView inspId={selId} inspections={inspections} edit={edit} remove={remove} isAdmin={isAdmin} nav={nav} notify={notify}/> : null;
     return <ListView inspections={inspections} nav={nav} sel={ssi}/>;
   };
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", background:C.bg, color:C.txt }}>
-      {notif && (
-        <div style={{ position:"fixed", top:16, right:16, zIndex:100, padding:"12px 18px", borderRadius:10, background:notif.type==="success"?"#e3f3ea":"#fdecea", border:"1px solid "+(notif.type==="success"?"#3f8059":"#d2564f"), color:notif.type==="success"?"#1f3d2b":"#8a241d", fontSize:14, fontWeight:500, boxShadow:"0 8px 22px rgba(31,61,43,.15)", maxWidth:340 }}>
-          {notif.type==="success"?"✅":"❌"} {notif.msg}
-        </div>
-      )}
       {sideOpen && !isDesktop && <div onClick={()=>sso(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", zIndex:48 }}/>}
       <div style={{ position:isDesktop?"sticky":"fixed", top:0, left:0, height:"100vh", zIndex:49, flexShrink:0, transform:isDesktop||sideOpen?"none":"translateX(-100%)", transition:"transform .25s ease" }}>
         <div style={{ width:220, background:C.side, borderRight:"1px solid "+C.bdr, display:"flex", flexDirection:"column", height:"100vh" }}>
@@ -930,7 +938,7 @@ export default function ReceptionApp() {
             ))}
           </nav>
           <div style={{ padding:"12px 8px", borderTop:"1px solid "+C.bdr }}>
-            <button onClick={logout} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:8, border:"none", cursor:"pointer", width:"100%", background:"transparent", color:C.sub, fontSize:14 }}>🚪 Déconnexion</button>
+            <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:8, border:"none", cursor:"pointer", width:"100%", background:"transparent", color:C.sub, fontSize:14 }}>🚪 Déconnexion</button>
           </div>
         </div>
       </div>
@@ -949,4 +957,26 @@ export default function ReceptionApp() {
       </div>
     </div>
   );
+}
+
+// ── Racine : gère la session ; ne monte AuthedApp (et donc le chargement des
+//    données) qu'une fois l'utilisateur connecté. Le toast est rendu ici pour
+//    couvrir aussi l'écran de réinitialisation de mot de passe. ───────────────
+export default function ReceptionApp() {
+  const { user, ready, recovery, clearRecovery } = useSession();
+  const [notif,sn]=useState(null);
+  const isDesktop=useDesktop();
+  const notify=useCallback((msg,type)=>{ sn({msg,type:type||"success"}); setTimeout(()=>sn(null),3800); },[]);
+  const logout=async()=>{ await supabase.auth.signOut(); };
+
+  const toast = notif && (
+    <div style={{ position:"fixed", top:16, right:16, zIndex:100, padding:"12px 18px", borderRadius:10, background:notif.type==="success"?"#e3f3ea":"#fdecea", border:"1px solid "+(notif.type==="success"?"#3f8059":"#d2564f"), color:notif.type==="success"?"#1f3d2b":"#8a241d", fontSize:14, fontWeight:500, boxShadow:"0 8px 22px rgba(31,61,43,.15)", maxWidth:340 }}>
+      {notif.type==="success"?"✅":"❌"} {notif.msg}
+    </div>
+  );
+
+  if(!ready) return <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:C.bg, color:C.sub }}>Chargement…</div>;
+  if(recovery) return <>{toast}<ResetPasswordView notify={notify} onDone={async()=>{ clearRecovery(); await supabase.auth.signOut(); }}/></>;
+  if(!user) return <>{toast}<LoginView/></>;
+  return <>{toast}<AuthedApp user={user} notify={notify} isDesktop={isDesktop} onLogout={logout}/></>;
 }
