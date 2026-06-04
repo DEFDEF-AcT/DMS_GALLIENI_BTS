@@ -744,9 +744,24 @@ function NewInspection({ orders, add, edit, user, nav, sel, notify }) {
 }
 
 // ── Détail d'un état des lieux ─────────────────────────────────────────────────
-function DetailView({ inspId, inspections, remove, isAdmin, nav, notify }) {
+function DetailView({ inspId, inspections, edit, remove, isAdmin, nav, notify }) {
+  const [signing, setSigning] = useState(false);
   const i = inspections.find(x => x.id === inspId);
   if(!i) return <p style={{ color:C.txt }}>Fiche introuvable.</p>;
+  // Enregistre la signature du client depuis la fiche, puis met à jour le PDF
+  // signé sur le Drive (best-effort, non bloquant).
+  const saveSig = async (dataUrl) => {
+    if(!dataUrl) return;            // « Effacer » : on ne ferme pas, on laisse re-signer
+    try {
+      await edit(i.id, { signature: dataUrl });
+      setSigning(false);
+      notify("Signature du client enregistrée ✔");
+      try {
+        const html = inspectionHTML({ ...i, signature: dataUrl }, []);
+        await archiveInspection({ inspectionNum: i.inspectionNum, plate: i.plate, entryDate: i.entryDate, html, photos: [] });
+      } catch(e) { console.warn("[Réception] re-archivage PDF signé", e); }
+    } catch(e) { notify("Erreur : " + (e.message||e), "error"); }
+  };
   const row = (lb,vl,col) => (
     <div><div style={{ color:C.mut, fontSize:11, marginBottom:2 }}>{lb}</div>
       <div style={{ color:col||C.txt, fontWeight:500, wordBreak:"break-word" }}>{vl||"—"}</div></div>
@@ -841,13 +856,27 @@ function DetailView({ inspId, inspections, remove, isAdmin, nav, notify }) {
         </Crd>
       )}
 
-      {i.signature && (
-        <Crd>
-          <h3 style={{ color:C.acc2, fontSize:13, fontWeight:700, marginBottom:10 }}>✍ Accord du client sur l'état constaté</h3>
-          <img src={i.signature} alt="Signature client" style={{ maxWidth:380, background:"#fff", borderRadius:8, padding:6, display:"block", border:"1px solid "+C.bdr }}/>
-          <div style={{ color:C.mut, fontSize:12, marginTop:8 }}>Signataire : {i.clientName||"—"}</div>
-        </Crd>
-      )}
+      <Crd>
+        <h3 style={{ color:C.acc2, fontSize:13, fontWeight:700, marginBottom:10 }}>✍ Accord du client sur l'état constaté</h3>
+        {signing ? (
+          <div style={{ background:C.field, borderRadius:10, padding:16, border:"1px solid "+C.bdr }}>
+            <p style={{ color:C.sub, fontSize:12, marginBottom:12 }}>Faites signer le client ci-dessous, puis appuyez sur « Valider la signature ».</p>
+            <SigPad onSave={saveSig} init={i.signature}/>
+            <div style={{ marginTop:8 }}><Btn sm ghost onClick={()=>setSigning(false)}>Annuler</Btn></div>
+          </div>
+        ) : i.signature ? (
+          <div>
+            <img src={i.signature} alt="Signature client" style={{ maxWidth:380, width:"100%", background:"#fff", borderRadius:8, padding:6, display:"block", border:"1px solid "+C.bdr }}/>
+            <div style={{ color:C.mut, fontSize:12, marginTop:8 }}>Signataire : {i.clientName||"—"}</div>
+            <div style={{ marginTop:10 }}><Btn sm ghost onClick={()=>setSigning(true)}>✍ Refaire la signature</Btn></div>
+          </div>
+        ) : (
+          <div>
+            <p style={{ color:C.sub, fontSize:13, marginBottom:12 }}>Aucune signature pour cette fiche. Le client peut signer maintenant.</p>
+            <Btn onClick={()=>setSigning(true)}>✍ Faire signer le client</Btn>
+          </div>
+        )}
+      </Crd>
     </div>
   );
 }
@@ -874,7 +903,7 @@ export default function ReceptionApp() {
   const NAV = [{ id:"list", ico:"🚗", lbl:"États des lieux" }, { id:"new", ico:"➕", lbl:"Nouveau tour" }];
   const renderPage=()=>{
     if(page==="new")    return <NewInspection orders={orders} add={add} edit={edit} user={user} nav={nav} sel={ssi} notify={notify}/>;
-    if(page==="detail") return selId ? <DetailView inspId={selId} inspections={inspections} remove={remove} isAdmin={isAdmin} nav={nav} notify={notify}/> : null;
+    if(page==="detail") return selId ? <DetailView inspId={selId} inspections={inspections} edit={edit} remove={remove} isAdmin={isAdmin} nav={nav} notify={notify}/> : null;
     return <ListView inspections={inspections} nav={nav} sel={ssi}/>;
   };
 
