@@ -429,9 +429,9 @@ function AuthCard({ children }) {
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:C.bg, padding:16 }}>
       <div style={{ background:C.card, borderRadius:16, padding:32, width:"100%", maxWidth:380, border:"1px solid "+C.bdr, boxShadow:"0 18px 45px rgba(31,61,43,.14)" }}>
         <div style={{ textAlign:"center", marginBottom:28 }}>
-          <div style={{ fontSize:48, marginBottom:12 }}>🚗</div>
+          <div style={{ fontSize:42, marginBottom:12, letterSpacing:2 }}>🚗🚛</div>
           <h1 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>Réception – Tour du véhicule</h1>
-          <p style={{ color:C.mut, fontSize:13, marginTop:6 }}>Lycée Gallieni · Atelier BTS MV</p>
+          <p style={{ color:C.mut, fontSize:13, marginTop:6 }}>Lycée Gallieni · Atelier BTS MV / VTR</p>
         </div>
         {children}
       </div>
@@ -511,7 +511,7 @@ function ListView({ inspections, nav, sel }) {
     <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗 États des lieux ({inspections.length})</h2>
-        <Btn onClick={() => nav("new")}>+ Nouveau tour du véhicule</Btn>
+        <Btn onClick={() => nav("new")}>+ Nouvelle réception d'un véhicule</Btn>
       </div>
       <input value={q} onChange={e => sq(e.target.value)} placeholder="🔍 Immatriculation, client, n° fiche, OR…"
         style={{ background:C.card, border:"1px solid "+C.bdr, borderRadius:8, padding:"10px 14px", color:C.txt, fontSize:13, outline:"none" }}/>
@@ -643,7 +643,7 @@ function NewInspection({ orders, ordersLoading, ordersError, reloadOrders, add, 
   if(!linked) return (
     <div style={{ maxWidth:760, margin:"0 auto" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 }}>
-        <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗 Nouveau tour du véhicule</h2>
+        <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗🚛 Nouvelle réception d'un véhicule</h2>
         <Btn ghost sm onClick={() => nav("list")}>← Retour</Btn>
       </div>
       <Crd>
@@ -907,13 +907,12 @@ function DetailView({ inspId, inspections, edit, remove, isAdmin, nav, notify })
 function AuthedApp({ user, notify, isDesktop, onLogout }) {
   const { inspections, add, edit, remove } = useInspections();
   const { items: orders, loading: ordersLoading, error: ordersError, reload: reloadOrders } = useCollection(listOrdersLite, "orders", DEMO_ORDERS);
-  const [page,sp]=useState("list");
-  const [selId,ssi]=useState(null); const [sideOpen,sso]=useState(false);
-  const nav=(p)=>{ sp(p); sso(false); };
+  const [page,sp]=useState("list");      // démarre toujours sur « États des lieux »
+  const [selId,ssi]=useState(null);
+  const nav=(p)=>{ sp(p); };
   const isAdmin = user.role === "admin";
   const rs = ROLE_STYLE[user.role] || { bg:"#eef2ef", cl:C.sub };
 
-  const NAV = [{ id:"list", ico:"🚗", lbl:"États des lieux" }, { id:"new", ico:"➕", lbl:"Nouveau tour" }];
   const renderPage=()=>{
     if(page==="new")    return <NewInspection orders={orders} ordersLoading={ordersLoading} ordersError={ordersError} reloadOrders={reloadOrders} add={add} edit={edit} user={user} nav={nav} sel={ssi} notify={notify}/>;
     if(page==="detail") return selId ? <DetailView inspId={selId} inspections={inspections} edit={edit} remove={remove} isAdmin={isAdmin} nav={nav} notify={notify}/> : null;
@@ -921,40 +920,27 @@ function AuthedApp({ user, notify, isDesktop, onLogout }) {
   };
 
   return (
-    <div style={{ minHeight:"100vh", display:"flex", background:C.bg, color:C.txt }}>
-      {sideOpen && !isDesktop && <div onClick={()=>sso(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", zIndex:48 }}/>}
-      <div style={{ position:isDesktop?"sticky":"fixed", top:0, left:0, height:"100vh", zIndex:49, flexShrink:0, transform:isDesktop||sideOpen?"none":"translateX(-100%)", transition:"transform .25s ease" }}>
-        <div style={{ width:220, background:C.side, borderRight:"1px solid "+C.bdr, display:"flex", flexDirection:"column", height:"100vh" }}>
-          <div style={{ padding:"20px 16px 16px", borderBottom:"1px solid "+C.bdr }}>
-            <div style={{ color:C.acc2, fontWeight:700, fontSize:14, marginBottom:8 }}>🚗 Réception véhicule</div>
-            <div style={{ color:C.txt, fontSize:13, fontWeight:600 }}>{user.name}</div>
-            <span style={{ fontSize:11, padding:"2px 8px", borderRadius:999, fontWeight:600, marginTop:4, display:"inline-block", background:rs.bg, color:rs.cl }}>{roleLabel(user.role)}</span>
-          </div>
-          <nav style={{ flex:1, padding:"12px 8px", display:"flex", flexDirection:"column", gap:2 }}>
-            {NAV.map(n => (
-              <button key={n.id} onClick={() => nav(n.id)} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:8, border:"none", cursor:"pointer", textAlign:"left", fontSize:14, fontWeight:page===n.id?600:400, background:page===n.id?C.acc:"transparent", color:page===n.id?"#fff":C.sub }}>
-                <span>{n.ico}</span>{n.lbl}
-              </button>
-            ))}
-          </nav>
-          <div style={{ padding:"12px 8px", borderTop:"1px solid "+C.bdr }}>
-            <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:8, border:"none", cursor:"pointer", width:"100%", background:"transparent", color:C.sub, fontSize:14 }}>🚪 Déconnexion</button>
-          </div>
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", background:C.bg, color:C.txt }}>
+      <header style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 16px", background:C.hdr, borderBottom:"1px solid "+C.bdr, position:"sticky", top:0, zIndex:30 }}>
+        {/* Logo VL + poids lourd (VTR). Cliquer le titre revient aux états des lieux. */}
+        <button onClick={()=>nav("list")} style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0, minWidth:0 }}>
+          <span style={{ fontSize:22, whiteSpace:"nowrap" }}>🚗🚛</span>
+          <span style={{ minWidth:0 }}>
+            <div style={{ color:C.acc2, fontWeight:700, fontSize:14 }}>Réception – Tour du véhicule</div>
+            <div style={{ color:C.mut, fontSize:11 }}>Lycée Gallieni · BTS MV / VTR</div>
+          </span>
+        </button>
+        <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+          {isDesktop && <span style={{ color:C.sub, fontSize:13 }}>{user.name}</span>}
+          <span style={{ fontSize:11, padding:"3px 10px", borderRadius:999, fontWeight:600, background:rs.bg, color:rs.cl }}>{roleLabel(user.role)}</span>
+          <button onClick={onLogout} title="Déconnexion" style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 10px", borderRadius:8, border:"1px solid "+C.bdr, cursor:"pointer", background:"transparent", color:C.sub, fontSize:13 }}>
+            🚪{isDesktop ? " Déconnexion" : ""}
+          </button>
         </div>
-      </div>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
-        <header style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:C.hdr, borderBottom:"1px solid "+C.bdr, position:"sticky", top:0, zIndex:30 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            {!isDesktop && <button onClick={()=>sso(true)} style={{ background:"none", border:"none", color:C.sub, cursor:"pointer", fontSize:22, padding:"2px 6px", lineHeight:1 }}>☰</button>}
-            <div><div style={{ color:C.acc2, fontWeight:700, fontSize:14 }}>🚗 Réception – Tour du véhicule</div><div style={{ color:C.mut, fontSize:11 }}>Lycée Gallieni</div></div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            {isDesktop && <span style={{ color:C.sub, fontSize:13 }}>{user.name}</span>}
-            <span style={{ fontSize:11, padding:"3px 10px", borderRadius:999, fontWeight:600, background:rs.bg, color:rs.cl }}>{roleLabel(user.role)}</span>
-          </div>
-        </header>
-        <main style={{ flex:1, padding:16, overflowY:"auto" }}>{renderPage()}</main>
-      </div>
+      </header>
+      <main style={{ flex:1, padding:16, overflowY:"auto" }}>
+        <div style={{ maxWidth:1000, margin:"0 auto" }}>{renderPage()}</div>
+      </main>
     </div>
   );
 }
