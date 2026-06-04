@@ -504,25 +504,44 @@ function ResetPasswordView({ notify, onDone }) {
 
 // ── Liste / tableau de bord ────────────────────────────────────────────────────
 function ListView({ inspections, nav, sel }) {
-  const [q,sq]=useState("");
-  const shown = inspections.filter(i =>
-    !q || [i.plate,i.brand,i.model,i.clientName,i.inspectionNum,i.orderNum].join(" ").toLowerCase().includes(q.toLowerCase()));
+  const [fPlate,setFPlate]=useState("");
+  const [fClient,setFClient]=useState("");
+  const [fVeh,setFVeh]=useState("");
+  const [fDate,setFDate]=useState("");
+  const norm=(s)=>String(s||"").toLowerCase();
+  const hasFilter = !!(fPlate||fClient||fVeh||fDate);
+  const shown = inspections.filter(i => {
+    if(fPlate  && !norm(i.plate).includes(norm(fPlate))) return false;
+    if(fClient && !norm(i.clientName).includes(norm(fClient))) return false;
+    if(fVeh    && !norm(i.brand+" "+i.model).includes(norm(fVeh))) return false;
+    if(fDate){ const d=String(i.entryDate||"").slice(0,10), c=String(i.createdAt||"").slice(0,10); if(d!==fDate && c!==fDate) return false; }
+    return true;
+  });
+  const resetFilters=()=>{ setFPlate(""); setFClient(""); setFVeh(""); setFDate(""); };
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <h2 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>🚗 🚛 États des lieux ({inspections.length})</h2>
         <Btn onClick={() => nav("new")}>+ Nouvelle réception d'un véhicule</Btn>
       </div>
-      <input value={q} onChange={e => sq(e.target.value)} placeholder="🔍 Immatriculation, client, n° fiche, OR…"
-        style={{ background:C.card, border:"1px solid "+C.bdr, borderRadius:8, padding:"10px 14px", color:C.txt, fontSize:13, outline:"none" }}/>
+      {/* Filtres : plaque, client, véhicule, date (combinables) */}
+      <Crd style={{ padding:12 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:10 }}>
+          <Inp label="🔖 Plaque d'immatriculation" value={fPlate} onChange={setFPlate} placeholder="AB-123-CD"/>
+          <Inp label="👤 Client" value={fClient} onChange={setFClient} placeholder="Nom du client"/>
+          <Inp label="🚗 Véhicule (marque/modèle)" value={fVeh} onChange={setFVeh} placeholder="Peugeot 308"/>
+          <Inp label="📅 Date" value={fDate} onChange={setFDate} type="date"/>
+        </div>
+        {hasFilter && <div style={{ marginTop:10 }}><Btn sm ghost onClick={resetFilters}>↺ Réinitialiser les filtres</Btn></div>}
+      </Crd>
 
       {/* Historique des réceptions déjà réalisées, avec le n° d'OR associé. */}
       <div>
         <h3 style={{ color:C.acc2, fontSize:14, fontWeight:700, margin:"4px 0 10px", paddingBottom:6, borderBottom:"1px solid "+C.bdr }}>
-          📋 Historique des réceptions {q ? `(${shown.length})` : ""}
+          📋 Historique des réceptions {hasFilter ? `(${shown.length})` : ""}
         </h3>
         {shown.length===0
-          ? <Crd><p style={{ color:C.mut, textAlign:"center", margin:0 }}>{q ? "Aucune réception ne correspond à la recherche." : "Aucune réception enregistrée pour le moment."}</p></Crd>
+          ? <Crd><p style={{ color:C.mut, textAlign:"center", margin:0 }}>{hasFilter ? "Aucune réception ne correspond aux filtres." : "Aucune réception enregistrée pour le moment."}</p></Crd>
           : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {shown.map(i => (
                 <div key={i.id} onClick={() => { sel(i.id); nav("detail"); }}
