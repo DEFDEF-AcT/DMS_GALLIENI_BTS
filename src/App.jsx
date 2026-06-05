@@ -30,7 +30,7 @@ const toLoginEmail = (v) => v.includes("@") ? v.trim() : v.trim().toLowerCase() 
 const APP_URL = window.location.origin + import.meta.env.BASE_URL;
 // Marqueur de version visible : permet de vérifier qu'un appareil a bien chargé
 // la dernière version (et non une page en cache). À incrémenter à chaque mise à jour.
-const APP_VERSION = "2026-06-04 · sig-mobile-3";
+const APP_VERSION = "2026-06-05 · PWA-auto-1";
 
 // ── Référentiels du tour du véhicule ─────────────────────────────────────────
 const TIRE_POS = [
