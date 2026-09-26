@@ -29,4 +29,12 @@ await icon("public/icon-192.png", 192, 0.9);
 await icon("public/icon-512.png", 512, 0.9);
 await icon("public/apple-touch-icon.png", 180, 0.9);
 await icon("public/maskable-512.png", 512, 0.66);
+
+// Logo « large » affiché DANS l'app (écran de connexion), sur fond blanc.
+await sharp(trimmed)
+  .resize({ width: 900, fit: "inside" })
+  .flatten({ background: BG })
+  .png()
+  .toFile("public/logo.png");
+console.log("écrit public/logo.png");
 console.log("OK");

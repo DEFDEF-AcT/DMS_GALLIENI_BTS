@@ -30,7 +30,7 @@ const toLoginEmail = (v) => v.includes("@") ? v.trim() : v.trim().toLowerCase() 
 const APP_URL = window.location.origin + import.meta.env.BASE_URL;
 // Marqueur de version visible : permet de vérifier qu'un appareil a bien chargé
 // la dernière version (et non une page en cache). À incrémenter à chaque mise à jour.
-const APP_VERSION = "2026-09-26 · logo-2";
+const APP_VERSION = "2026-09-26 · logo-3";
 
 // ── Référentiels du tour du véhicule ─────────────────────────────────────────
 const TIRE_POS = [
@@ -458,7 +458,7 @@ function AuthCard({ children }) {
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:C.bg, padding:16 }}>
       <div style={{ background:C.card, borderRadius:16, padding:32, width:"100%", maxWidth:380, border:"1px solid "+C.bdr, boxShadow:"0 18px 45px rgba(31,61,43,.14)" }}>
         <div style={{ textAlign:"center", marginBottom:28 }}>
-          <div style={{ fontSize:42, marginBottom:12 }}>🚗 🚛</div>
+          <img src={import.meta.env.BASE_URL + "logo.png"} alt="" style={{ width:"80%", maxWidth:240, height:"auto", display:"block", margin:"0 auto 14px" }}/>
           <h1 style={{ color:C.txt, fontSize:20, fontWeight:700, margin:0 }}>Réception Atelier Véhicule</h1>
           <p style={{ color:C.mut, fontSize:13, marginTop:6 }}>Lycée Gallieni - BTS MV</p>
         </div>
@@ -990,10 +990,13 @@ function AuthedApp({ user, notify, isDesktop, onLogout }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", background:C.bg, color:C.txt }}>
       <header style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 16px", background:C.hdr, borderBottom:"1px solid "+C.bdr, position:"sticky", top:0, zIndex:30 }}>
-        {/* Titre cliquable : revient aux états des lieux. */}
-        <button onClick={()=>nav("list")} style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0, minWidth:0 }}>
-          <div style={{ color:C.acc2, fontWeight:700, fontSize:15 }}>Réception Atelier Véhicule</div>
-          <div style={{ color:C.mut, fontSize:11 }}>Lycée Gallieni - BTS MV</div>
+        {/* Logo (badge) + titre cliquable : revient aux états des lieux. */}
+        <button onClick={()=>nav("list")} style={{ display:"flex", flexDirection:"row", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0, minWidth:0 }}>
+          <img src={import.meta.env.BASE_URL + "icon-192.png"} alt="" style={{ width:36, height:36, borderRadius:9, flexShrink:0, boxShadow:"0 1px 3px rgba(31,61,43,.15)" }}/>
+          <span style={{ minWidth:0 }}>
+            <div style={{ color:C.acc2, fontWeight:700, fontSize:15 }}>Réception Atelier Véhicule</div>
+            <div style={{ color:C.mut, fontSize:11 }}>Lycée Gallieni - BTS MV</div>
+          </span>
         </button>
         <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
           {isDesktop && <span style={{ color:C.sub, fontSize:13 }}>{user.name}</span>}
