@@ -1,31 +1,32 @@
-// Génère les icônes PNG de la PWA à partir d'une icône vectorielle simple.
+// Génère les icônes PNG de la PWA à partir de l'illustration source (scripts/logo-source.webp).
 // Usage ponctuel : `npm i --no-save sharp && node scripts/gen-icons.mjs`
 // (sharp n'est PAS une dépendance du projet ; les PNG sont commités dans public/.)
 import sharp from "sharp";
 import { mkdirSync } from "node:fs";
 
-const svg = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#5d9e78"/>
-  <rect x="176" y="180" width="160" height="92" rx="28" fill="#ffffff"/>
-  <rect x="104" y="250" width="304" height="88" rx="34" fill="#ffffff"/>
-  <circle cx="182" cy="346" r="40" fill="#1f3d2b"/>
-  <circle cx="330" cy="346" r="40" fill="#1f3d2b"/>
-  <circle cx="182" cy="346" r="17" fill="#ffffff"/>
-  <circle cx="330" cy="346" r="17" fill="#ffffff"/>
-</svg>`;
+const SRC = "scripts/logo-source.webp";
+const BG = { r: 255, g: 255, b: 255, alpha: 1 };   // fond blanc (comme l'illustration)
 
-const buf = Buffer.from(svg);
 mkdirSync("public", { recursive: true });
 
-const out = [
-  ["public/icon-192.png", 192],
-  ["public/icon-512.png", 512],
-  ["public/maskable-512.png", 512],
-  ["public/apple-touch-icon.png", 180],
-];
+// On rogne le fond blanc autour du dessin pour maximiser sa taille dans l'icône.
+const trimmed = await sharp(SRC).flatten({ background: BG }).trim({ threshold: 15 }).png().toBuffer();
 
-for (const [file, size] of out) {
-  await sharp(buf).resize(size, size).png().toFile(file);
+async function icon(file, size, innerRatio) {
+  const inner = Math.round(size * innerRatio);
+  const fitted = await sharp(trimmed)
+    .resize({ width: inner, height: inner, fit: "inside", withoutEnlargement: false })
+    .toBuffer();
+  await sharp({ create: { width: size, height: size, channels: 4, background: BG } })
+    .composite([{ input: fitted, gravity: "center" }])
+    .png()
+    .toFile(file);
   console.log("écrit", file, size + "px");
 }
+
+// Icônes « any » : marge légère. Maskable : marge de sécurité plus grande (zone masquée).
+await icon("public/icon-192.png", 192, 0.9);
+await icon("public/icon-512.png", 512, 0.9);
+await icon("public/apple-touch-icon.png", 180, 0.9);
+await icon("public/maskable-512.png", 512, 0.66);
 console.log("OK");
